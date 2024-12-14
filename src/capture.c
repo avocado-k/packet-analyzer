@@ -4,14 +4,16 @@
 #include "packet.h"
 
 // Callback function for packet processing
-static void packet_handler(u_char *user, const struct pcap_pkthdr *header, const u_char *packet)
-{
-    static int count = 1; // 패킷 카운터 추가
-    printf("Packet #%d captured!\n", count++);
+static void packet_handler(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) {
+    static int count = 1;
+    printf("\nPacket #%d captured!\n", count++);
     printf("Packet length: %d\n", header->len);
-    printf("Capture length: %d\n", header->caplen);
-    printf("Timestamp: %ld.%06ld\n\n", header->ts.tv_sec, header->ts.tv_usec);
-    fflush(stdout); // 즉시 출력하도록 버퍼 플러시
+    
+    // Parse IP header
+    parse_ip_header(packet);
+    
+    printf("\n");
+    fflush(stdout);
 }
 
 int start_capture(pcap_t *handle)
