@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra
 LDFLAGS = -lpcap
 
-SRCS = src/main.c src/capture.c
+SRCS = src/main.c src/capture.c src/packet.c
 OBJS = $(SRCS:.c=.o)
 TARGET = packet_analyzer
 
