@@ -1,6 +1,56 @@
 #include <stdio.h>
 #include "packet.h"
 
+
+void print_hex_dump(const uint8_t *payload, int len) {
+    int i;
+    const int bytes_per_line = 16;
+    
+    for (i = 0; i < len; i++) {
+        // 16바이트마다 새 줄 시작
+        if (i % bytes_per_line == 0) {
+            printf("\n%04x: ", i);
+        }
+        
+        // 16진수로 출력
+        printf("%02x ", payload[i]);
+        
+        // 줄의 마지막이면 ASCII 출력
+        if ((i + 1) % bytes_per_line == 0 || i + 1 == len) {
+            // 마지막 줄의 정렬을 위한 패딩
+            for (int j = 0; j < bytes_per_line - (i % bytes_per_line) - 1; j++) {
+                printf("   ");
+            }
+            printf(" |");
+            // ASCII 출력
+            for (int j = i - (i % bytes_per_line); j <= i; j++) {
+                if (isprint(payload[j])) printf("%c", payload[j]);
+                else printf(".");
+            }
+            printf("|");
+        }
+    }
+    printf("\n");
+}
+
+int is_http_packet(uint16_t src_port, uint16_t dst_port) {
+    return (src_port == 80 || dst_port == 80 ||    // HTTP
+            src_port == 443 || dst_port == 443);   // HTTPS
+}
+
+void analyze_payload(const uint8_t *packet, int header_length, int total_length) {
+    const uint8_t *payload = packet + header_length;
+    int payload_length = total_length - header_length;
+    
+    if (payload_length <= 0) {
+        printf("No payload\n");
+        return;
+    }
+    
+    printf("Payload (%d bytes):\n", payload_length);
+    print_hex_dump(payload, payload_length < 128 ? payload_length : 128);
+}
+
 const char* get_protocol_name(uint8_t protocol) {
     switch(protocol) {
         case IPPROTO_ICMP: return "ICMP";
@@ -17,6 +67,8 @@ void print_port_info(uint16_t src_port, uint16_t dst_port) {
 
 void parse_tcp_header(const uint8_t *packet, int ip_header_length) {
     const struct tcphdr *tcp_header = (const struct tcphdr*)(packet + 14 + ip_header_length);
+    int tcp_header_length = tcp_header->doff * 4;
+    int total_header_length = 14 + ip_header_length + tcp_header_length;  // Ethernet + IP + TCP
     
     printf("TCP Header Info:\n");
     print_port_info(tcp_header->source, tcp_header->dest);
@@ -30,6 +82,12 @@ void parse_tcp_header(const uint8_t *packet, int ip_header_length) {
     if (tcp_header->ack) printf(" ACK");
     if (tcp_header->urg) printf(" URG");
     printf("\n");
+
+    // HTTP 패킷인 경우 페이로드 분석
+    if (is_http_packet(ntohs(tcp_header->source), ntohs(tcp_header->dest))) {
+        printf("HTTP packet detected:\n");
+        analyze_payload(packet, total_header_length, total_header_length + 1500);
+    }
 }
 
 void parse_udp_header(const uint8_t *packet, int ip_header_length) {

@@ -15,4 +15,8 @@ void parse_tcp_header(const uint8_t *packet, int ip_header_length);
 void parse_udp_header(const uint8_t *packet, int ip_header_length);
 void print_port_info(uint16_t src_port, uint16_t dst_port);
 
+void analyze_payload(const uint8_t *packet, int header_length, int total_length);
+int is_http_packet(uint16_t src_port, uint16_t dst_port);
+void print_hex_dump(const uint8_t *payload, int len);
+
 #endif // PACKET_H
