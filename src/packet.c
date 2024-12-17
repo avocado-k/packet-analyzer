@@ -2,6 +2,53 @@
 #include "packet.h"
 
 
+void init_filter(packet_filter_t *filter) {
+    filter->src_ip = NULL;
+    filter->dst_ip = NULL;
+    filter->src_port = 0;
+    filter->dst_port = 0;
+}
+
+void set_filter(packet_filter_t *filter, const char *src_ip, 
+                const char *dst_ip, uint16_t src_port, uint16_t dst_port) {
+    filter->src_ip = src_ip ? strdup(src_ip) : NULL;
+    filter->dst_ip = dst_ip ? strdup(dst_ip) : NULL;
+    filter->src_port = src_port;
+    filter->dst_port = dst_port;
+}
+
+int apply_filter(const uint8_t *packet, const packet_filter_t *filter) {
+    const struct ip *ip_header = (const struct ip*)(packet + 14);
+    char src_ip[INET_ADDRSTRLEN];
+    char dst_ip[INET_ADDRSTRLEN];
+    
+    inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->ip_dst), dst_ip, INET_ADDRSTRLEN);
+
+    // IP 필터 체크
+    if (filter->src_ip && strcmp(src_ip, filter->src_ip) != 0) return 0;
+    if (filter->dst_ip && strcmp(dst_ip, filter->dst_ip) != 0) return 0;
+
+    // 포트 필터 체크 (TCP/UDP인 경우만)
+    if (filter->src_port || filter->dst_port) {
+        if (ip_header->ip_p == IPPROTO_TCP) {
+            const struct tcphdr *tcp_header = 
+                (const struct tcphdr*)(packet + 14 + ip_header->ip_hl * 4);
+            if (filter->src_port && ntohs(tcp_header->source) != filter->src_port) return 0;
+            if (filter->dst_port && ntohs(tcp_header->dest) != filter->dst_port) return 0;
+        }
+        else if (ip_header->ip_p == IPPROTO_UDP) {
+            const struct udphdr *udp_header = 
+                (const struct udphdr*)(packet + 14 + ip_header->ip_hl * 4);
+            if (filter->src_port && ntohs(udp_header->source) != filter->src_port) return 0;
+            if (filter->dst_port && ntohs(udp_header->dest) != filter->dst_port) return 0;
+        }
+    }
+    
+    return 1;  // 모든 필터 조건 통과
+}
+
+
 void print_hex_dump(const uint8_t *payload, int len) {
     int i;
     const int bytes_per_line = 16;

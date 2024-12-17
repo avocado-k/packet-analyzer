@@ -8,7 +8,22 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+typedef struct {
+    char *src_ip;        // 출발지 IP (NULL이면 모든 IP)
+    char *dst_ip;        // 목적지 IP (NULL이면 모든 IP)
+    uint16_t src_port;   // 출발지 포트 (0이면 모든 포트)
+    uint16_t dst_port;   // 목적지 포트 (0이면 모든 포트)
+} packet_filter_t;
+
+
 // uint8_t: 1바이트 unsigned 정수 (이전의 u_char)
+
+int apply_filter(const uint8_t *packet, const packet_filter_t *filter);
+void init_filter(packet_filter_t *filter);
+void set_filter(packet_filter_t *filter, const char *src_ip, 
+                const char *dst_ip, uint16_t src_port, uint16_t dst_port);
+                
 void parse_ip_header(const uint8_t *packet);
 const char* get_protocol_name(uint8_t protocol);
 void parse_tcp_header(const uint8_t *packet, int ip_header_length);
