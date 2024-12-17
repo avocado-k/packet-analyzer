@@ -19,6 +19,7 @@ int main() {
     CU_initialize_registry();
     CU_pSuite suite = CU_add_suite("Packet Filter Suite", 0, 0);
 
+    CU_add_test(suite, "test of apply_filter", test_apply_filter);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
