@@ -1,6 +1,65 @@
 #include <stdio.h>
 #include "packet.h"
 
+void init_stats(packet_stats_t *stats) {
+    memset(stats, 0, sizeof(packet_stats_t));
+}
+
+void update_stats(packet_stats_t *stats, const uint8_t *packet, uint32_t packet_len) {
+    const struct ip *ip_header = (const struct ip*)(packet + 14);
+    stats->total_packets++;
+    stats->total_bytes += packet_len;
+
+    // 프로토콜별 카운트
+    switch(ip_header->ip_p) {
+        case IPPROTO_TCP: {
+            stats->tcp_packets++;
+            const struct tcphdr *tcp_header = 
+                (const struct tcphdr*)(packet + 14 + ip_header->ip_hl * 4); //이더넷 헤더 구조 (총 14바이트)
+            uint16_t src_port = ntohs(tcp_header->source);
+            uint16_t dst_port = ntohs(tcp_header->dest);
+            
+            // HTTP/HTTPS 패킷 카운트
+            if (src_port == 80 || dst_port == 80) {
+                stats->http_packets++;
+            } else if (src_port == 443 || dst_port == 443) {
+                stats->https_packets++;
+            }
+            break;
+        }
+        case IPPROTO_UDP:
+            stats->udp_packets++;
+            break;
+        case IPPROTO_ICMP:
+            stats->icmp_packets++;
+            break;
+        default:
+            stats->other_packets++;
+            break;
+    }
+}
+
+void print_stats(const packet_stats_t *stats) {
+    printf("\n=== Packet Statistics ===\n");
+    printf("Total Packets: %u\n", stats->total_packets);
+    printf("Total Bytes: %lu\n", stats->total_bytes);
+    printf("Average Packet Size: %.2f bytes\n", 
+           stats->total_packets ? (float)stats->total_bytes/stats->total_packets : 0);
+    
+    printf("\nProtocol Distribution:\n");
+    printf("TCP: %u (%.1f%%)\n", stats->tcp_packets, 
+           stats->total_packets ? (float)stats->tcp_packets/stats->total_packets*100 : 0);
+    printf("UDP: %u (%.1f%%)\n", stats->udp_packets,
+           stats->total_packets ? (float)stats->udp_packets/stats->total_packets*100 : 0);
+    printf("ICMP: %u (%.1f%%)\n", stats->icmp_packets,
+           stats->total_packets ? (float)stats->icmp_packets/stats->total_packets*100 : 0);
+    printf("Other: %u (%.1f%%)\n", stats->other_packets,
+           stats->total_packets ? (float)stats->other_packets/stats->total_packets*100 : 0);
+    
+    printf("\nWeb Traffic:\n");
+    printf("HTTP: %u packets\n", stats->http_packets);
+    printf("HTTPS: %u packets\n", stats->https_packets);
+}
 
 void init_filter(packet_filter_t *filter) {
     filter->src_ip = NULL;

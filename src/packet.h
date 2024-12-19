@@ -10,6 +10,17 @@
 
 
 typedef struct {
+    uint32_t total_packets;      // 전체 패킷 
+    uint32_t tcp_packets;        // TCP 패킷 
+    uint32_t udp_packets;        // UDP 패킷 
+    uint32_t icmp_packets;       // ICMP 패킷 
+    uint32_t other_packets;      // 기타 패킷 
+    uint64_t total_bytes;        // 전체 바이트 
+    uint32_t http_packets;       // HTTP 패킷 
+    uint32_t https_packets;      // HTTPS 패킷 
+} packet_stats_t;
+
+typedef struct {
     char *src_ip;        // 출발지 IP (NULL이면 모든 IP)
     char *dst_ip;        // 목적지 IP (NULL이면 모든 IP)
     uint16_t src_port;   // 출발지 포트 (0이면 모든 포트)
@@ -17,7 +28,9 @@ typedef struct {
 } packet_filter_t;
 
 
-// uint8_t: 1바이트 unsigned 정수 (이전의 u_char)
+void init_stats(packet_stats_t *stats);
+void update_stats(packet_stats_t *stats, const uint8_t *packet, uint32_t packet_len);
+void print_stats(const packet_stats_t *stats);
 
 int apply_filter(const uint8_t *packet, const packet_filter_t *filter);
 void init_filter(packet_filter_t *filter);
