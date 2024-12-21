@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "packet.h"
-
+#include <string.h>   
+#include <ctype.h>    
+#include <pcap.h>     
 
 void init_rate_monitor(packet_rate_t *rate) {
     memset(rate, 0, sizeof(packet_rate_t));
