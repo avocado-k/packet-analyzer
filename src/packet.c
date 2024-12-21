@@ -1,6 +1,59 @@
 #include <stdio.h>
 #include "packet.h"
 
+
+void init_rate_monitor(packet_rate_t *rate) {
+    memset(rate, 0, sizeof(packet_rate_t));
+    rate->last_update = time(NULL);
+}
+
+void update_rate(packet_rate_t *rate, uint32_t packet_len) {
+    time_t current_time = time(NULL);
+    rate->packet_count++;
+    rate->byte_count += packet_len;
+    
+    // 1초마다 속도 계산
+    double elapsed = difftime(current_time, rate->last_update);
+    if (elapsed >= 1.0) {
+        // PPS 계산
+        rate->current_pps = rate->packet_count / elapsed;
+        if (rate->current_pps > rate->peak_pps) {
+            rate->peak_pps = rate->current_pps;
+        }
+        
+        // BPS 계산 (bytes를 bits로 변환: * 8)
+        rate->current_bps = (rate->byte_count * 8) / elapsed;
+        if (rate->current_bps > rate->peak_bps) {
+            rate->peak_bps = rate->current_bps;
+        }
+        
+        // 카운터 리셋
+        rate->packet_count = 0;
+        rate->byte_count = 0;
+        rate->last_update = current_time;
+    }
+}
+
+void print_rate(const packet_rate_t *rate) {
+    printf("\033[2K\r"); // 현재 줄 지우기
+    printf("Current Rate: %.2f pps (Peak: %.2f) | ", 
+           rate->current_pps, rate->peak_pps);
+    
+    // BPS를 적절한 단위로 변환
+    if (rate->current_bps >= 1e9) {
+        printf("%.2f Gbps", rate->current_bps / 1e9);
+    } else if (rate->current_bps >= 1e6) {
+        printf("%.2f Mbps", rate->current_bps / 1e6);
+    } else if (rate->current_bps >= 1e3) {
+        printf("%.2f Kbps", rate->current_bps / 1e3);
+    } else {
+        printf("%.2f bps", rate->current_bps);
+    }
+    
+    fflush(stdout);  // 버퍼 즉시 출력
+}
+
+
 void init_stats(packet_stats_t *stats) {
     memset(stats, 0, sizeof(packet_stats_t));
 }

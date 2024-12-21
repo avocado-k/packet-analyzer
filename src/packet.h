@@ -7,6 +7,7 @@
 #include <netinet/udp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 
 typedef struct {
@@ -27,6 +28,19 @@ typedef struct {
     uint16_t dst_port;   // 목적지 포트 (0이면 모든 포트)
 } packet_filter_t;
 
+typedef struct {
+    time_t last_update;         // 마지막 업데이트 시간
+    uint32_t packet_count;      // 현재 구간의 패킷 수
+    uint64_t byte_count;        // 현재 구간의 바이트 수
+    float current_pps;          // 현재 PPS
+    float current_bps;          // 현재 BPS
+    float peak_pps;            // 최고 PPS
+    float peak_bps;            // 최고 BPS
+} packet_rate_t;
+
+void init_rate_monitor(packet_rate_t *rate);
+void update_rate(packet_rate_t *rate, uint32_t packet_len);
+void print_rate(const packet_rate_t *rate);
 
 void init_stats(packet_stats_t *stats);
 void update_stats(packet_stats_t *stats, const uint8_t *packet, uint32_t packet_len);
