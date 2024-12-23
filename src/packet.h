@@ -8,7 +8,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <netinet/ip_icmp.h> 
 
+
+void parse_icmp_header(const uint8_t *packet, int ip_header_length);
+const char* get_icmp_type(uint8_t type);
 
 typedef struct {
     uint32_t total_packets;      // 전체 패킷 

@@ -4,6 +4,36 @@
 #include <ctype.h>    
 #include <pcap.h>     
 
+const char* get_icmp_type(uint8_t type) {
+    switch(type) {
+        case ICMP_ECHOREPLY: return "Echo Reply";
+        case ICMP_DEST_UNREACH: return "Destination Unreachable";
+        case ICMP_SOURCE_QUENCH: return "Source Quench";
+        case ICMP_REDIRECT: return "Redirect";
+        case ICMP_ECHO: return "Echo Request";
+        case ICMP_TIME_EXCEEDED: return "Time Exceeded";
+        case ICMP_PARAMETERPROB: return "Parameter Problem";
+        case ICMP_TIMESTAMP: return "Timestamp Request";
+        case ICMP_TIMESTAMPREPLY: return "Timestamp Reply";
+        default: return "Unknown";
+    }
+}
+
+void parse_icmp_header(const uint8_t *packet, int ip_header_length) {
+    const struct icmphdr *icmp_header = (const struct icmphdr*)(packet + 14 + ip_header_length);
+    
+    printf("ICMP Header Info:\n");
+    printf("  Type: %s (%d)\n", get_icmp_type(icmp_header->type), icmp_header->type);
+    printf("  Code: %d\n", icmp_header->code);
+    printf("  Checksum: 0x%04x\n", ntohs(icmp_header->checksum));
+    
+    if (icmp_header->type == ICMP_ECHO || icmp_header->type == ICMP_ECHOREPLY) {
+        printf("  Identifier: %d\n", ntohs(icmp_header->un.echo.id));
+        printf("  Sequence: %d\n", ntohs(icmp_header->un.echo.sequence));
+    }
+}
+
+
 void init_rate_monitor(packet_rate_t *rate) {
     memset(rate, 0, sizeof(packet_rate_t));
     rate->last_update = time(NULL);
@@ -281,6 +311,12 @@ void parse_ip_header(const uint8_t *packet) {
             break;
         case IPPROTO_UDP:
             parse_udp_header(packet, ip_header_length);
+            break;
+        case IPPROTO_ICMP:
+            parse_icmp_header(packet, ip_header_length);
+            break;
+        default:
+            printf("Unknown protocol\n");
             break;
     }
 }
