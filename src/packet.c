@@ -4,6 +4,29 @@
 #include <ctype.h>    
 #include <pcap.h>     
 
+void print_ipv6_addr(const struct in6_addr *addr) {
+    char addr_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, addr, addr_str, INET6_ADDRSTRLEN);
+    printf("%s", addr_str);
+}
+
+void parse_ipv6_header(const uint8_t *packet) {
+    const struct ip6_hdr *ip6_header = (const struct ip6_hdr*)(packet + 14);
+    
+    printf("IPv6 Header Info:\n");
+    printf("  Version: 6\n");
+    printf("  Traffic Class: 0x%02x\n", (ntohl(ip6_header->ip6_flow) >> 20) & 0xff);
+    printf("  Flow Label: 0x%05x\n", ntohl(ip6_header->ip6_flow) & 0xfffff);
+    printf("  Payload Length: %d\n", ntohs(ip6_header->ip6_plen));
+    printf("  Next Header: %s\n", get_protocol_name(ip6_header->ip6_nxt));
+    printf("  Hop Limit: %d\n", ip6_header->ip6_hlim);
+    printf("  Source: ");
+    print_ipv6_addr(&ip6_header->ip6_src);
+    printf("\n  Destination: ");
+    print_ipv6_addr(&ip6_header->ip6_dst);
+    printf("\n");
+}
+
 const char* get_icmp_type(uint8_t type) {
     switch(type) {
         case ICMP_ECHOREPLY: return "Echo Reply";

@@ -9,7 +9,10 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <netinet/ip_icmp.h> 
+#include <netinet/ip6.h>
 
+void parse_ipv6_header(const uint8_t *packet);
+void print_ipv6_addr(const struct in6_addr *addr);
 
 void parse_icmp_header(const uint8_t *packet, int ip_header_length);
 const char* get_icmp_type(uint8_t type);
